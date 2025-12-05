@@ -35,7 +35,7 @@ This is the current expected pathway, but we expect this may change as the proje
 *Goal: Numerical stability for high Rayleigh numbers ($Ra > 10^{13}$).*
 
 *   [ ] **Phase I: Python Prototype (Validation).**
-    *   Implementation of the **Shan-Chen (1997)** Double Distribution model.
+    *   Implementation of the **Shan (1997)** Double Distribution model.
     *   *Validated:* Boussinesq coupling and critical Nusselt numbers ($Ra_c \approx 1708$).
 *   [ ] **Phase II: Stability -- Hybrid Recursive Regularization (HRR).**
     *   Implementation of the **Farag (2020)** model.
