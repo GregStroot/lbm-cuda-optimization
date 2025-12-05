@@ -1,0 +1,22 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+
+# C++ / CUDA / CMake
+build/
+bin/
+*.o
+*.obj
+*.exe
+*.so
+*.dylib
+compile_commands.json
+
+# Data files
+data/
+benchmarks/*.bin
+benchmarks/*.npy
