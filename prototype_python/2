@@ -51,7 +51,7 @@ class SimulationConfig:
 
         # 6. Boussinesq Force Scaling
         # Ra = GrPr, Gr = g(L_y^3)/(nu^2)
-        self.Ly = self.ny #Or ny-1?
+        self.Ly = self.ny
         self.buoyancy_coef = (self.Ra*self.nu**2)/(self.Pr * self.Ly**3)
 
         # Debug print
