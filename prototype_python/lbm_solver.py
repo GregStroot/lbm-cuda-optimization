@@ -14,7 +14,6 @@ class ShanLBMSolver:
     """
 
     def __init__(self, cfg):
-        # TODO
         self.cfg = cfg
         self.shape = (9, cfg.ny, cfg.nx)
 
@@ -32,7 +31,16 @@ class ShanLBMSolver:
         self.geq = np.zeros(self.shape) # Thermal
 
     def initialize(self):
-        #TODO: What do they do in the paper?
+        # Initialize with steady state (analytical solution) with a perturbation
+        for y in range(self.cfg.ny):
+            self.T[y,:] = 1.0 - (y / (self.cfg.ny))
+
+        # Perturbation (1% of total value)
+        self.T += (np.random.rand(self.cfg.ny, self.cfg.nx) - 0.5) * 0.01)
+
+        #Initialize as equilibrium value
+        self.f[:] = self.compute_equilibrium(self.rho, self.u, type = 'fluid')
+        self.g[:] = self.compute_equilibrium(self.T, self.u, type = 'thermal')
 
 
     def compute_equilibrium(self, rho, u, type='fluid'):
@@ -51,6 +59,11 @@ class ShanLBMSolver:
         inv_rho = 1.0 / self.rho
         self.u[0] = np.sum(self.f * CX[:, None, None], axis = 0) * inv_rho
         self.u[1] = np.sum(self.f * CY[:, None, None], axis = 0) * inv_rho
+
+        # -- No-slip BC Enforcement --
+        #Force before equilibrium computation
+        self.u[:, 0, :] = 0.0
+        self.u[:, -1, :] = 0.0
 
         # 2. Calculate Boussinesq (Gravity force -- Shan 1997 Eqn 12)
         y_grid = np.arange(self.cfg.ny)[:,None]
@@ -88,9 +101,38 @@ class ShanLBMSolver:
             self.g[i] = np.roll(self.g[i], (CX[i], CY[i]), axis=(1, 0))
 
     def apply_bcs(self):
-        #TODO
+        # ----- FLUID BC (No-slip) -----
+        # Shan 1997 Eqn 14
 
-        raise Exception()
+        # Bottom Wall (y=0): n_+^0 (2,5,6) unknown
+        # Set them with n_-^0 (4,7,8)
+        self.f[2, 0, :] = self.f[4, 0, :]
+        self.f[5, 0, :] = self.f[7, 0, :]
+        self.f[6, 0, :] = self.f[8, 0, :]
+
+        # Top wall (y=n_y): n_-^{n_y} (4,7,8) unknown
+        # Set them with n_+^{n_y} (2,5,6)
+        self.f[4, -1, :] = self.f[2, -1, :]
+        self.f[7, -1, :] = self.f[5, -1, :]
+        self.f[8, -1, :] = self.f[6, -1, :]
+
+
+
+        # ----- TEMP BC (Isothermal) -----
+        # Shan 1997 Eqn 17: n_a = 2*w_a*T_wall - n_b
+
+        # Bottom Wall (y=0, T=1.0):
+        t_wall_bot = 1.0
+        self.g[2, 0, :] = 2 * W[2] * t_wall_bot - self.g[4, 0, :]
+        self.g[5, 0, :] = 2 * W[5] * t_wall_bot - self.g[7, 0, :]
+        self.g[6, 0, :] = 2 * W[6] * t_wall_bot - self.g[8, 0, :]
+
+        # Top Wall (y=-1, T=0.0):
+        t_wall_top = 0.0
+        self.g[4, -1, :] = 2 * W[4] * t_wall_top - self.g[2, -1, :]
+        self.g[7, -1, :] = 2 * W[7] * t_wall_top - self.g[5, -1, :]
+        self.g[8, -1, :] = 2 * W[8] * t_wall_top - self.g[6, -1, :]
+
 
     def step(self):
         #f(t) (post collision) -> stream (f(t+1)) -> collide (f(t+1) post collision)
