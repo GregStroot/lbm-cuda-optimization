@@ -16,8 +16,7 @@ OPPOSITE = np.array([0, 3, 4, 1, 2, 7, 8, 5, 6])
 
 
 class SimulationConfig:
-    def __init__(self, nx, ny, Ra, Pr=1.0);
-        #TODO
+    def __init__(self, nx, ny, Ra, Pr=1.0):
         '''
 
         Args:
@@ -57,7 +56,7 @@ class SimulationConfig:
         # Debug print
         print(f"--- CONFIGURATION ---")
         print(f"Grid: {nx}x{ny}")
-        print(f"Ra: {ra:.2e}, Pr: {pr}")
+        print(f"Ra: {Ra:.2e}, Pr: {Pr}")
         print(f"Tau Fluid (tau_1): {self.tau_f:.5f}")
         print(f"Tau Thermal (tau_2): {self.tau_g:.5f}")
         print(f"Buoyancy Coef: {self.buoyancy_coef:.5e}")

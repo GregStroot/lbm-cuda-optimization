@@ -23,7 +23,7 @@ class ShanLBMSolver:
 
         # Macroscopic
         self.rho = np.ones((cfg.ny, cfg.nx))
-        self.u   = np.ones((2,cfg.ny, cfg.nx)) #0=u_x, 1=u_y
+        self.u   = np.zeros((2,cfg.ny, cfg.nx)) #0=u_x, 1=u_y
         self.T   = np.zeros((cfg.ny, cfg.nx))
 
         # Buffers
@@ -36,7 +36,16 @@ class ShanLBMSolver:
             self.T[y,:] = 1.0 - (y / (self.cfg.ny))
 
         # Perturbation (1% of total value)
-        self.T += (np.random.rand(self.cfg.ny, self.cfg.nx) - 0.5) * 0.01)
+        epsilon = 0.1
+
+        # Create grid of coordinates
+        x = np.arange(self.cfg.nx)
+        y = np.arange(self.cfg.ny)
+        X, Y = np.meshgrid(x, y)
+
+        perturbation = epsilon * (np.sin(np.pi * X / (self.cfg.nx - 1)) * \
+                                  np.sin(np.pi * Y / (self.cfg.ny - 1)))
+        self.T += perturbation
 
         #Initialize as equilibrium value
         self.f[:] = self.compute_equilibrium(self.rho, self.u, type = 'fluid')
@@ -48,13 +57,13 @@ class ShanLBMSolver:
         ea_dot_u = 3.0 * (CX[:, None, None] * u[0] + CY[:, None, None] * u[1])
         u_dot_u = 1.5 * (u[0]**2 + u[1]**2)
 
-        return rho*W[:, None, None] * 1.0 + ea_dot_u + 0.5 * ea_dot_u**2 - u_dot_u)
+        return rho*W[:, None, None] * (1.0 + ea_dot_u + 0.5 * ea_dot_u**2 - u_dot_u)
 
 
     def collide(self):
         #Macroscopic moments (Shan 1997 between Eqn 1 and 2)
         self.rho = np.sum(self.f, axis = 0)
-        self.T   = np.sum(self.g, axis = 1)
+        self.T   = np.sum(self.g, axis = 0)
 
         inv_rho = 1.0 / self.rho
         self.u[0] = np.sum(self.f * CX[:, None, None], axis = 0) * inv_rho
@@ -85,7 +94,7 @@ class ShanLBMSolver:
 
         # 4. Calculate Equilibrium distributions
         self.feq = self.compute_equilibrium(self.rho, u_eq_f, type = 'fluid')
-        self.geq = self.compute_equilibrium(self.T, u_eq_g, type = 'fluid')
+        self.geq = self.compute_equilibrium(self.T, u_eq_g, type = 'thermal')
 
         # 5. Relax (compute RHS)
         self.f += -(1.0 / self.cfg.tau_f) * (self.f - self.feq)
